@@ -10,12 +10,26 @@
 
 #define LCD_RESPONSE_NONE (-1)
 
+uint8_t await_byte(int fd) {
+    uint8_t byte;
+
+    while (read(fd, &byte, 1) == 0);
+
+    return byte;
+}
+
+void await_read(int fd, char *dest, int n) {
+    while (n-- > 0) {
+        *(dest++) = await_byte(fd);
+    }
+}
+
 void print_and_free_log(struct lcd_raw_log_s *log) {
     char *str = malloc(log->length + 1);
     memcpy(str, log->str, log->length);
     str[log->length] = 0;
 
-    printf("%s\n", str);
+    printf("Log: %s\n", str);
 
     free(str);
     free(log->str);
@@ -58,14 +72,12 @@ struct lcd_raw_response_s *lcd_raw_await_response(int fd) {
     uint8_t byte;
 
     while (1) {
-        if (read(fd, &byte, 1) == 0) continue;
+        byte = await_byte(fd);
 
         if (byte <= LCD_RESPONSE_LOG) break;
+
+        putchar(byte);
     }
-
-    int foo = byte;
-
-    printf("%d\n", foo);
 
     struct lcd_raw_response_s *response;
     struct lcd_raw_error_s *error;
@@ -76,22 +88,22 @@ struct lcd_raw_response_s *lcd_raw_await_response(int fd) {
         case LCD_RESPONSE_ACK:
             response = malloc(sizeof(struct lcd_raw_response_s));
             response->code = byte;
+
             return response;
         case LCD_RESPONSE_ERROR:
             error = malloc(sizeof(struct lcd_raw_error_s));
             error->code = byte;
-
-            read(fd, &error->error_code, 1);
+            error->error_code = await_byte(fd);
             
             return (struct lcd_raw_response_s *) error;
         case LCD_RESPONSE_LOG:
             log = malloc(sizeof(struct lcd_raw_log_s));
-            log->code = byte;
 
-            read(fd, &log->length, 1);
+            log->code = byte;
+            log->length = await_byte(fd);
             
             log->str = malloc(log->length);
-            read(fd, log->str, log->length);
+            await_read(fd, log->str, log->length);
 
             return (struct lcd_raw_response_s *) log;
     }
@@ -104,7 +116,6 @@ struct lcd_raw_response_s *lcd_raw_await_response_logging(int fd) {
 
     while (1) {
         response = lcd_raw_await_response(fd);
-        printf("%d\n", response->code);
 
         if (response->code != LCD_RESPONSE_LOG) return response;
 

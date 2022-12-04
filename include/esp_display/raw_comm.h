@@ -25,7 +25,7 @@ struct lcd_raw_error_s {
 
 struct lcd_raw_log_s {
     uint8_t code;
-    uint16_t length;
+    uint8_t length;
     char *str;
 };
 
