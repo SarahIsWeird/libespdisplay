@@ -24,7 +24,7 @@ int main(int argc, char **argv) {
                 break;
             case 'c':
                 columns = atoi(optarg);
-		        break;
+                break;
             case ':':
                 fprintf(stderr, "Error: option %c takes an argument.\n", optopt);
                 break;
@@ -40,12 +40,12 @@ int main(int argc, char **argv) {
             case '?':
                 fprintf(stderr, "Warning: unknown option %c\n", optopt);
                 break;
-	    }
+        }
     }
 
     if ((device == NULL) || (rows <= 0) || (columns <= 0)) {
-    	fprintf(stderr, "Usage: %s -d <device> -r <rows> -c <columns>\n", argv[0]);
-	    return 1;
+        fprintf(stderr, "Usage: %s -d <device> -r <rows> -c <columns>\n", argv[0]);
+        return 1;
     }
 
     lcd_display_p disp = lcd_connect(device, columns, rows);
